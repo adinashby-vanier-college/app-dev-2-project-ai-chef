@@ -1,4 +1,12 @@
 class IngredientsList {
+  static final IngredientsList _instance = IngredientsList._internal();
+
+  factory IngredientsList() {
+    return _instance;
+  }
+
+  IngredientsList._internal();
+
   List<String> hardCodedIngredientList = [
     "Acorn",
     "Agave",
@@ -40,4 +48,5 @@ class IngredientsList {
     "Carrots",
   ];
   List<String> chosenIngredients = [];
+  List<String> chosenDietRestrictions = [];
 }

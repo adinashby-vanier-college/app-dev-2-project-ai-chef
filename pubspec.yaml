@@ -27,3 +27,4 @@ flutter:
   # Asset declaration for 'config.env'
   assets:
     - assets/config.env
+    - images/

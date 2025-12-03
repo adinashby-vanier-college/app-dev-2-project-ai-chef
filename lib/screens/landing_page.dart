@@ -4,10 +4,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:recipe_ai_app/screens/ingredients_list_page.dart';
+import 'package:recipe_ai_app/services/ingredients_list.dart';
 
 import '../home_screen.dart';
 
 class LandingPage extends StatefulWidget {
+
   @override
   _LandingPageState createState() => _LandingPageState();
 }
@@ -26,8 +28,9 @@ class _LandingPageState extends State<LandingPage> {
                   ),
                 )
               },
-              child: Text("Open App")))
-
+              child: Text("Open App")
+          )
+      )
     );
 
   }
