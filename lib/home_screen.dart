@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:recipe_ai_app/services/ingredients_list.dart';
 import 'cubit/recipe_cubit.dart';
 import 'cubit/recipe_state.dart';
 
@@ -12,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _controller = TextEditingController();
+  final IngredientsList ingredientsList = IngredientsList();
 
   @override
   void dispose() {
@@ -21,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _fetchRecipe() {
     final ingredients = _controller.text.trim();
-    context.read<RecipeCubit>().fetchRecipe(ingredients);
+    context.read<RecipeCubit>().fetchRecipe(ingredientsList.getRecipe());
   }
 
   @override

@@ -15,7 +15,7 @@ class GeminiService {
         {
           "role": "user",
           "parts": [
-            {"text": "I have the following ingredients: $ingredients. Suggest a simple recipe."}
+            {"text": "I have the following information: $ingredients. Suggest a classic recipe."}
           ]
         }
       ]

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:recipe_ai_app/screens/time_selection_screen.dart';
 
 import '../services/ingredients_list.dart';
 
@@ -67,7 +68,7 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen>{
         child: ElevatedButton(
             onPressed: () => Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => DietaryRestrictionsScreen(),
+                builder: (context) => TimeSelectionScreen(),
               ),
             ),
             child: Text("Next")),
