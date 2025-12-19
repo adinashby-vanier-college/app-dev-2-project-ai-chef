@@ -1,42 +1,78 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:recipe_ai_app/screens/cooking_tools_screen.dart';
-
 import '../services/ingredients_list.dart';
 
-class TimeSelectionScreen extends StatefulWidget{
-  @override
-  _TimeSelectionScreenState createState() =>  _TimeSelectionScreenState();
-  }
+class TimeSelectionScreen extends StatefulWidget {
+  const TimeSelectionScreen({super.key});
 
-class _TimeSelectionScreenState extends State<TimeSelectionScreen>{
+  @override
+  _TimeSelectionScreenState createState() => _TimeSelectionScreenState();
+}
+
+class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
   final IngredientsList ingredientsList = IngredientsList();
-  String selectedDuration = "";
+  Duration selectedDuration = const Duration(minutes: 30);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: CupertinoTimerPicker(
-          mode: CupertinoTimerPickerMode.hm,
-          initialTimerDuration: Duration(minutes: 30),
-          onTimerDurationChanged: (Duration newDuration) {
-            selectedDuration = newDuration.toString();
-          },
-        ),
-        bottomNavigationBar: Container(
-    child: ElevatedButton(
-    onPressed: () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => CookingToolsScreen(),
-        ),
-      );
-      ingredientsList.availableCookingTime = selectedDuration;
-      print(ingredientsList.availableCookingTime);
+      appBar: AppBar(
+        title: const Text("Select Cooking Time"),
+        backgroundColor: Colors.deepPurple,
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 20),
+          CupertinoTimerPicker(
+            mode: CupertinoTimerPickerMode.hm,
+            initialTimerDuration: selectedDuration,
+            onTimerDurationChanged: (Duration newDuration) {
+              setState(() {
+                selectedDuration = newDuration;
+              });
+            },
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Selected Time: ${selectedDuration.inHours.toString().padLeft(2, '0')}h "
+            "${(selectedDuration.inMinutes % 60).toString().padLeft(2, '0')}m",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Colors.deepPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            onPressed: () {
+              // Save selected time
+              ingredientsList.availableCookingTime =
+                  "${selectedDuration.inHours}h ${(selectedDuration.inMinutes % 60)}m";
+              print("Selected Time: ${ingredientsList.availableCookingTime}");
 
-    },
-    child: Text("Next")),
-    ),
+              // Navigate to next screen
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const CookingToolsScreen(),
+                ),
+              );
+            },
+            child: const Text(
+              "Next",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

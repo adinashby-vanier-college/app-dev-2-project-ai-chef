@@ -16,6 +16,11 @@ dependencies:
   equatable: ^2.0.7
   cupertino_icons: ^1.0.8
 
+  # Firebase dependencies
+  firebase_core: ^2.20.0
+  firebase_auth: ^4.8.0
+  google_sign_in: ^6.1.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -24,7 +29,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Asset declaration for 'config.env'
   assets:
     - assets/config.env
-    - images/
+    - assets/google_logo.png

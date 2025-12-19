@@ -8,22 +8,22 @@ class RecipeCubit extends Cubit<RecipeState> {
   RecipeCubit(this._geminiService) : super(RecipeInitial());
 
   Future<void> fetchRecipe(String ingredients) async {
-    if (ingredients.isEmpty) {
+    if (ingredients.trim().isEmpty) {
       emit(const RecipeError("Please enter ingredients."));
       return;
     }
 
     emit(RecipeLoading());
     try {
-      String result = await _geminiService.getRecipe(ingredients);
+      final result = await _geminiService.getRecipe(ingredients);
 
-      if (result.startsWith("Error:")) {
+      if (result.toLowerCase().contains("error") || result.toLowerCase().contains("network")) {
         emit(RecipeError(result));
       } else {
         emit(RecipeLoaded(result));
       }
     } catch (e) {
-      emit(RecipeError("An error occurred: ${e.toString()}"));
+      emit(RecipeError("An unexpected error occurred: ${e.toString()}"));
     }
   }
 }

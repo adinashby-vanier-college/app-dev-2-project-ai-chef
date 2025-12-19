@@ -1,79 +1,97 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:recipe_ai_app/screens/time_selection_screen.dart';
-
 import '../services/ingredients_list.dart';
 
-class DietaryRestrictionsScreen extends StatefulWidget{
-  @override
-  _DietaryRestrictionsScreenState createState() => _DietaryRestrictionsScreenState();
-  }
+class DietaryRestrictionsScreen extends StatefulWidget {
+  const DietaryRestrictionsScreen({super.key});
 
-class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen>{
+  @override
+  _DietaryRestrictionsScreenState createState() =>
+      _DietaryRestrictionsScreenState();
+}
+
+class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
   final IngredientsList ingredientsList = IngredientsList();
+
+  // Helper to toggle selection
+  void _toggleRestriction(String restriction) {
+    setState(() {
+      if (ingredientsList.chosenDietRestrictions.contains(restriction)) {
+        ingredientsList.chosenDietRestrictions.remove(restriction);
+      } else {
+        ingredientsList.chosenDietRestrictions.add(restriction);
+      }
+    });
+    print("Chosen restrictions: ${ingredientsList.chosenDietRestrictions}");
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Dietary Restrictions"),
+        backgroundColor: Colors.deepPurple,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Wrap(
           spacing: 20.0,
           runSpacing: 20.0,
-        children: <Widget>[
-          TextButton(
-              onPressed: ()  { ingredientsList.chosenDietRestrictions.add("dairy");
-                print(ingredientsList.chosenDietRestrictions);
-                print(ingredientsList.chosenIngredients);
-              },
-              child: Image.asset(
-                  'images/dairy.PNG',
-                height: 130,
-              ),
-          ),
-          TextButton(
-            onPressed: ()  { ingredientsList.chosenDietRestrictions.add("peanut");
-            print(ingredientsList.chosenDietRestrictions);
-            print(ingredientsList.chosenIngredients);
-            },
-            child: Image.asset(
-              'images/peanut.PNG',
-              height: 130,
-            ),
-          ),
-          TextButton(
-            onPressed: ()  { ingredientsList.chosenDietRestrictions.add("vegan");
-            print(ingredientsList.chosenDietRestrictions);
-            print(ingredientsList.chosenIngredients);
-            },
-            child: Image.asset(
-              'images/vegan.PNG',
-              height: 130,
-            ),
-          ),
-          TextButton(
-            onPressed: ()  { ingredientsList.chosenDietRestrictions.add("vegetarian");
-            print(ingredientsList.chosenDietRestrictions);
-            print(ingredientsList.chosenIngredients);
-            },
-            child: Image.asset(
-              'images/vegetarian.PNG',
-              height: 130,
-            ),
-          ),
-        ],
+          children: <Widget>[
+            _buildRestrictionButton("dairy", 'images/dairy.PNG'),
+            _buildRestrictionButton("peanut", 'images/peanut.PNG'),
+            _buildRestrictionButton("vegan", 'images/vegan.PNG'),
+            _buildRestrictionButton("vegetarian", 'images/vegetarian.PNG'),
+          ],
+        ),
       ),
-      ),
-      bottomNavigationBar: Container(
-        child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => TimeSelectionScreen(),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: Colors.deepPurple,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
               ),
             ),
-            child: Text("Next")),
+            onPressed: () {
+              // Navigate to Time Selection
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TimeSelectionScreen(),
+                ),
+              );
+            },
+            child: const Text(
+              "Next",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRestrictionButton(String restriction, String imagePath) {
+    final isSelected = ingredientsList.chosenDietRestrictions.contains(restriction);
+
+    return GestureDetector(
+      onTap: () => _toggleRestriction(restriction),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? Colors.deepPurple : Colors.transparent,
+            width: 3,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Image.asset(
+          imagePath,
+          height: 130,
+        ),
       ),
     );
   }
 }
-
