@@ -18,13 +18,14 @@ class RecipeCubit extends Cubit<RecipeState> {
     emit(RecipeLoading());
     try {
       String result = await _geminiService.getRecipe(ingredients);
-      final RecipeSteps _recipeSteps = RecipeSteps(result);
-      _recipeSteps.parseTextIntoSteps();
+
+      final recipeStepsObj  = RecipeSteps(result);
+      List <String> stepsArray = recipeStepsObj.parseTextIntoSteps();
 
       if (result.startsWith("Error:")) {
         emit(RecipeError(result));
       } else {
-        emit(RecipeLoaded(result));
+        emit(RecipeLoaded(result, stepsArray));
       }
     } catch (e) {
       emit(RecipeError("An error occurred: ${e.toString()}"));

@@ -1,49 +1,58 @@
-import 'dart:math';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:recipe_ai_app/services/gemini_image_generator.dart';
 import 'dart:typed_data';
 
-class RecipeStepsScreen extends StatefulWidget {
-  @override
-  State<StatefulWidget> createState() => _RecipeStepsScreenState();
-}
+import '../services/gemini_image_generator.dart';
 
-class _RecipeStepsScreenState extends State<RecipeStepsScreen> {
+class RecipeStepsScreen extends StatelessWidget {
+  final List<String> recipeSteps;
+  final GeminiImageGenerator _imageGenerator = GeminiImageGenerator();
 
-  final GeminiImageGenerator geminiImageGenerator = GeminiImageGenerator();
+  RecipeStepsScreen({super.key, required this.recipeSteps});
 
-  int leftDiceNumber = 1;
-  int rightDiceNumber = 1;
-
-  String response = "";
-
-  Uint8List? imageBytes;
-
-
-  void changeDiceFace() {
-    setState(() {
-      leftDiceNumber = Random().nextInt(6) + 1;
-      rightDiceNumber = Random().nextInt(6) + 1;
-    });
-  }
   @override
   Widget build(BuildContext context) {
+
+    final cleanSteps = recipeSteps.where((s) {
+      final text = s.trim().toLowerCase();
+      return text.length > 5 && !text.contains("instructions");
+    }).toList();
+
     return Scaffold(
-      body: TextButton(
-          onPressed: () async {
-            final bytes = await geminiImageGenerator.textToImage("Wash and core the apples, then finely slice them. Slice the apricots.");
-            setState(() {
-              imageBytes = bytes;
-            });
-            },
-        child: imageBytes == null
-            ? Text("Generate Image")
-            : Image.memory(imageBytes!),
-      )
+      appBar: AppBar(title: const Text("Cooking Guide")),
+      body: ListView.builder(
+        itemCount: cleanSteps.length,
+        itemBuilder: (context, index) {
+          return Card(
+            margin: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                FutureBuilder<Uint8List?>(
+                  future: _imageGenerator.textToImage(cleanSteps[index]),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const SizedBox(
+                          height: 200,
+                          child: Center(child: CircularProgressIndicator())
+                      );
+                    }
+                    if (snapshot.hasData && snapshot.data != null) {
+                      return Image.memory(snapshot.data!, fit: BoxFit.cover);
+                    }
+                    return const Icon(Icons.broken_image, size: 100);
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    cleanSteps[index],
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
-
-  }
-
+}

@@ -13,11 +13,12 @@ class RecipeLoading extends RecipeState {}
 
 class RecipeLoaded extends RecipeState {
   final String recipe;
+  final List<String> steps;
 
-  const RecipeLoaded(this.recipe);
+  const RecipeLoaded(this.recipe, this.steps);
 
   @override
-  List<Object> get props => [recipe];
+  List<Object> get props => [recipe, steps];
 }
 
 class RecipeError extends RecipeState {
