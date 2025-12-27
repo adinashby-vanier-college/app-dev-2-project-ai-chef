@@ -16,20 +16,50 @@ class _LandingPageState extends State<LandingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Expanded(
-          child: TextButton(
-              onPressed: () =>
-              {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => IngredientsListPage(),
+      body: Stack(
+        children: <Widget>[
+          SizedBox.expand(
+            child: Image.asset(
+              "images/recipe_step_1.png",
+              fit: BoxFit.cover,
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.8),
                   ),
-                )
-              },
-              child: Text("Open App")
-          )
-      )
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => IngredientsListPage(),
+                      ),
+                    );
+                  },
+                  child: Text("Choose Ingredients to Generate a Recipe"),
+                ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white.withOpacity(0.8),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => IngredientsListPage(),
+                      ),
+                    );
+                  },
+                  child: Text("Upload Image to Generate a Recipe"),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
-
   }
 }
