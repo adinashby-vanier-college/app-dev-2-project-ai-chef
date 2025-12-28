@@ -1,6 +1,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:recipe_ai_app/screens/image_upload_screen.dart';
 import 'package:recipe_ai_app/screens/ingredients_list_page.dart';
 import 'package:recipe_ai_app/services/ingredients_list.dart';
 
@@ -49,7 +50,7 @@ class _LandingPageState extends State<LandingPage> {
                   onPressed: () {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
-                        builder: (context) => IngredientsListPage(),
+                        builder: (context) => ImageUploadScreen(),
                       ),
                     );
                   },
