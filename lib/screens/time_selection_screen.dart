@@ -16,6 +16,9 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          title: Text("Select Available Cooking Time"),
+        ),
         body: CupertinoTimerPicker(
           mode: CupertinoTimerPickerMode.hm,
           initialTimerDuration: Duration(minutes: 30),
@@ -23,20 +26,34 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen>{
             selectedDuration = newDuration.toString();
           },
         ),
-        bottomNavigationBar: Container(
-    child: ElevatedButton(
-    onPressed: () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => CookingToolsScreen(),
-        ),
-      );
-      ingredientsList.availableCookingTime = selectedDuration;
-      print(ingredientsList.availableCookingTime);
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text("Back"),
+                ),
+              ),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    ingredientsList.availableCookingTime = selectedDuration;
 
-    },
-    child: Text("Next")),
-    ),
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => CookingToolsScreen(),
+                      ),
+                    );
+                  },
+                    child: Text("Next")
+                ),
+                ),
+            ],
+          ),
+        )
     );
   }
 }

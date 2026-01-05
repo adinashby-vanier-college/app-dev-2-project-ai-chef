@@ -15,6 +15,9 @@ class _CookingToolsScreenState extends State<CookingToolsScreen>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          title: Text("Select Available Cooking Tools"),
+        ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Wrap(
@@ -64,15 +67,33 @@ class _CookingToolsScreenState extends State<CookingToolsScreen>{
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => HomeScreen(),
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text("Back"),
+                ),
               ),
-            ),
-            child: Text("Next")),
-      ),
-    );
+              Expanded(
+                child: OutlinedButton(
+                    onPressed: () {
+
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => HomeScreen(),
+                        ),
+                      );
+                    },
+                    child: Text("Next")
+                ),
+              ),
+            ],
+          ),
+        )
+      );
   }
 }
