@@ -7,6 +7,7 @@ class GeminiService {
   final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? "";
 
   Future<String> getRecipe(String ingredients) async {
+    print("Inner");
     final String url =
         "https://74.125.132.95/v1beta/models/gemini-2.5-flash:generateContent?key=$_apiKey";
 
