@@ -19,6 +19,7 @@ dependencies:
   # Firebase (aligned + stable)
   firebase_core: ^2.30.0
   firebase_auth: ^4.17.0
+  cloud_firestore: ^4.17.5    # added this line
   google_sign_in: ^6.2.1
 
 dev_dependencies:

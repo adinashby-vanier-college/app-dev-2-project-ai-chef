@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Automatically fetch recipe when screen loads
-    final ingredientsString = ingredientsList.getRecipe();
+    final ingredientsString = ingredientsList.getRecipePrompt();  // Fixed here
     context.read<RecipeCubit>().fetchRecipe(ingredientsString);
   }
 

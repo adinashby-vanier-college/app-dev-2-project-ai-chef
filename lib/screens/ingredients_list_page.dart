@@ -1,26 +1,79 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dietary_restrictions_screen.dart';
 import '../services/ingredients_list.dart';
 
 class IngredientsListPage extends StatefulWidget {
-  IngredientsListPage({super.key}); // No const
+  IngredientsListPage({super.key});
   @override
   _IngredientsListPageState createState() => _IngredientsListPageState();
 }
 
 class _IngredientsListPageState extends State<IngredientsListPage> {
   final IngredientsList ingredientsList = IngredientsList();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchIngredients();
+  }
+
+  Future<void> _fetchIngredients() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        setState(() {
+          ingredientsList.chosenIngredients =
+              List<String>.from(data['chosenIngredients'] ?? []);
+          ingredientsList.chosenDietRestrictions =
+              List<String>.from(data['chosenDietRestrictions'] ?? []);
+          ingredientsList.availableCookingTime =
+              data['availableCookingTime'] ?? "";
+          ingredientsList.chosenCookingTools =
+              List<String>.from(data['chosenCookingTools'] ?? []);
+        });
+      }
+    } catch (e) {
+      print("Error fetching ingredients: $e");
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _saveIngredients() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        'chosenIngredients': ingredientsList.chosenIngredients,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print("Error saving ingredients: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Select Ingredients"),
         backgroundColor: Colors.deepPurple,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(22),
@@ -48,6 +101,7 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
                         ingredientsList.chosenIngredients.add(ingredient);
                       }
                     });
+                    _saveIngredients(); // save immediately
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isAdded ? Colors.grey : Colors.deepPurple,
@@ -67,6 +121,7 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: () {
+            _saveIngredients(); // save before moving forward
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const DietaryRestrictionsScreen(),
