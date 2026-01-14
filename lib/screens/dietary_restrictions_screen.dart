@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:recipe_ai_app/screens/time_selection_screen.dart';
+import 'package:recipe_ai_app/screens/cooking_tools_screen.dart'; // Import the CookingToolsScreen
 import '../services/ingredients_list.dart';
 
 class DietaryRestrictionsScreen extends StatefulWidget {
@@ -78,8 +78,8 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
     print("Chosen restrictions: ${ingredientsList.chosenDietRestrictions}");
   }
 
-  // Navigate to next screen with a loading state for the button
-  void _navigateToNextScreen() async {
+  // Navigate to CookingToolsScreen
+  void _navigateToCookingToolsScreen() async {
     setState(() {
       _isNextButtonLoading = true;
     });
@@ -87,10 +87,10 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
     // Simulate saving the data or additional processing
     await Future.delayed(const Duration(seconds: 1));
 
-    // Navigate after the process is done
+    // Navigate to the next screen (CookingToolsScreen)
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const TimeSelectionScreen(),
+        builder: (context) => const CookingToolsScreen(), // Navigate to CookingToolsScreen
       ),
     );
   }
@@ -202,7 +202,7 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: _isNextButtonLoading ? null : _navigateToNextScreen,
+            onPressed: _isNextButtonLoading ? null : _navigateToCookingToolsScreen, // Adjusted here
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: Colors.deepPurple,

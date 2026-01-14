@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:recipe_ai_app/home_screen.dart';
+import 'package:recipe_ai_app/screens/time_selection_screen.dart'; // Import TimeSelectionScreen
 import '../services/ingredients_list.dart';
 
 class CookingToolsScreen extends StatefulWidget {
@@ -12,6 +12,7 @@ class CookingToolsScreen extends StatefulWidget {
 class _CookingToolsScreenState extends State<CookingToolsScreen> {
   final IngredientsList ingredientsList = IngredientsList();
 
+  // Toggle tool selection
   void _toggleTool(String tool) {
     setState(() {
       if (ingredientsList.chosenCookingTools.contains(tool)) {
@@ -55,10 +56,10 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
               ),
             ),
             onPressed: () {
-              // Navigate to HomeScreen
+              // Navigate to TimeSelectionScreen after choosing tools
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => const HomeScreen(),
+                  builder: (context) => const TimeSelectionScreen(), // Changed this to TimeSelectionScreen which is final screen where API call occurs
                 ),
               );
             },
@@ -72,6 +73,7 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
     );
   }
 
+  // Build tool selection button widget
   Widget _buildToolButton(String tool, String imagePath) {
     final isSelected = ingredientsList.chosenCookingTools.contains(tool);
 
@@ -88,7 +90,7 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Image.asset(
-            imagePath, // <-- Correct path
+            imagePath, // Correct path
             height: 130,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {

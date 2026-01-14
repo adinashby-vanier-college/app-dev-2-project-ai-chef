@@ -33,7 +33,7 @@ flutter:
   assets:
     - assets/config.env
     - assets/google_logo.png
-    - assets/
+    - assets/images/
 
 dependency_overrides:
   google_sign_in_android: ^6.1.23

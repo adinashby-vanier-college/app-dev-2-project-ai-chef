@@ -122,9 +122,20 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
               if (_generatedRecipe != null)
                 Padding(
                   padding: const EdgeInsets.all(8.0),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      _generatedRecipe!,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              // Show loading message if generating recipe
+              if (_isGeneratingRecipe)
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
                   child: Text(
-                    _generatedRecipe!,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    "Generating recipe, please wait...",
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
             ],
