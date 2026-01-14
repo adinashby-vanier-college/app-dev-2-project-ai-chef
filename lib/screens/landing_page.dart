@@ -37,12 +37,19 @@ class _LandingPageState extends State<LandingPage> {
     }
   }
 
-  /// Google Sign-In without Pigeon
+  /// Google Sign-In (forces account chooser)
   Future<void> _signInWithGoogle() async {
     setState(() => _signingIn = true);
 
     try {
-      final googleUser = await GoogleSignIn().signIn();
+      final googleSignIn = GoogleSignIn(
+        signInOption: SignInOption.standard,
+      );
+
+      // Force account chooser every time
+      await googleSignIn.signOut();
+
+      final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         // user canceled
         setState(() => _signingIn = false);
