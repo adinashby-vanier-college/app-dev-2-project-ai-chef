@@ -36,10 +36,10 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
           spacing: 20.0,
           runSpacing: 20.0,
           children: <Widget>[
-            _buildToolButton("oventop", 'images/oventop.PNG'),
-            _buildToolButton("camp fire", 'images/fire.PNG'),
-            _buildToolButton("microwave", 'images/microwave.PNG'),
-            _buildToolButton("oven", 'images/oven.PNG'),
+            _buildToolButton("Oven Top", 'assets/images/oventop.PNG'),
+            _buildToolButton("Camp Fire", 'assets/images/fire.PNG'),
+            _buildToolButton("Microwave", 'assets/images/microwave.PNG'),
+            _buildToolButton("Oven", 'assets/images/oven.PNG'),
           ],
         ),
       ),
@@ -85,9 +85,21 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
           ),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Image.asset(
-          imagePath,
-          height: 130,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            imagePath, // <-- Correct path
+            height: 130,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[200],
+                height: 130,
+                width: 130,
+                child: const Icon(Icons.error, color: Colors.red),
+              );
+            },
+          ),
         ),
       ),
     );

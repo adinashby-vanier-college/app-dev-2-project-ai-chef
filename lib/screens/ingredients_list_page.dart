@@ -3,7 +3,7 @@ import 'dietary_restrictions_screen.dart';
 import '../services/ingredients_list.dart';
 
 class IngredientsListPage extends StatefulWidget {
-  IngredientsListPage({super.key}); // NO const
+  IngredientsListPage({super.key}); // No const
   @override
   _IngredientsListPageState createState() => _IngredientsListPageState();
 }
@@ -69,7 +69,7 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => DietaryRestrictionsScreen(),
+                builder: (context) => const DietaryRestrictionsScreen(),
               ),
             );
           },

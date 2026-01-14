@@ -21,26 +21,31 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
         title: const Text("Select Cooking Time"),
         backgroundColor: Colors.deepPurple,
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          CupertinoTimerPicker(
-            mode: CupertinoTimerPickerMode.hm,
-            initialTimerDuration: selectedDuration,
-            onTimerDurationChanged: (Duration newDuration) {
-              setState(() {
-                selectedDuration = newDuration;
-              });
-            },
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CupertinoTimerPicker(
+                mode: CupertinoTimerPickerMode.hm,
+                initialTimerDuration: selectedDuration,
+                onTimerDurationChanged: (Duration newDuration) {
+                  setState(() {
+                    selectedDuration = newDuration;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Selected Time: ${selectedDuration.inHours.toString().padLeft(2, '0')}h "
+                "${(selectedDuration.inMinutes % 60).toString().padLeft(2, '0')}m",
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          Text(
-            "Selected Time: ${selectedDuration.inHours.toString().padLeft(2, '0')}h "
-            "${(selectedDuration.inMinutes % 60).toString().padLeft(2, '0')}m",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ],
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
@@ -59,7 +64,7 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
                   "${selectedDuration.inHours}h ${(selectedDuration.inMinutes % 60)}m";
               print("Selected Time: ${ingredientsList.availableCookingTime}");
 
-              // Navigate to next screen
+              // Navigate to CookingToolsScreen
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const CookingToolsScreen(),

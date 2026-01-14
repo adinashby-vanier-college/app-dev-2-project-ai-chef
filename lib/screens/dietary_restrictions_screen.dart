@@ -13,7 +13,6 @@ class DietaryRestrictionsScreen extends StatefulWidget {
 class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
   final IngredientsList ingredientsList = IngredientsList();
 
-  // Helper to toggle selection
   void _toggleRestriction(String restriction) {
     setState(() {
       if (ingredientsList.chosenDietRestrictions.contains(restriction)) {
@@ -38,10 +37,10 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
           spacing: 20.0,
           runSpacing: 20.0,
           children: <Widget>[
-            _buildRestrictionButton("dairy", 'images/dairy.PNG'),
-            _buildRestrictionButton("peanut", 'images/peanut.PNG'),
-            _buildRestrictionButton("vegan", 'images/vegan.PNG'),
-            _buildRestrictionButton("vegetarian", 'images/vegetarian.PNG'),
+            _buildRestrictionButton("dairy", 'assets/images/dairy.PNG'),
+            _buildRestrictionButton("peanut", 'assets/images/peanut.PNG'),
+            _buildRestrictionButton("vegan", 'assets/images/vegan.PNG'),
+            _buildRestrictionButton("vegetarian", 'assets/images/vegetarian.PNG'),
           ],
         ),
       ),
@@ -57,7 +56,6 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
               ),
             ),
             onPressed: () {
-              // Navigate to Time Selection
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const TimeSelectionScreen(),
@@ -87,9 +85,21 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
           ),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Image.asset(
-          imagePath,
-          height: 130,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            imagePath, // <-- Correct path
+            height: 130,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[200],
+                height: 130,
+                width: 130,
+                child: const Icon(Icons.error, color: Colors.red),
+              );
+            },
+          ),
         ),
       ),
     );

@@ -12,7 +12,20 @@
           "package_name": "com.ai_chef.recipeapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "487913960052-tck01mf3flmjvp60aqme13fn95ea6pop.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ai_chef.recipeapp",
+            "certificate_hash": "c887b95f1062c7a5a360ba1feb980d4613ed50f6"
+          }
+        },
+        {
+          "client_id": "487913960052-inm9436uug8kfr2ri1oe90nu5stu6ehe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCMZi2awgrlyNyRb3aHpwkBbP_5V3Ls-Wc"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "487913960052-inm9436uug8kfr2ri1oe90nu5stu6ehe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "487913960052-do081ooj1bvf9husd3gvmffajddk4ep1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.recipeAiApp"
+              }
+            }
+          ]
         }
       }
     }

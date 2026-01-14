@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.gms.google-services")  // added this line
+    id("com.google.gms.google-services")  // just apply it, no version here
 }
 
 android {
@@ -16,7 +16,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "17" // this works and avoids the compilerOptions DSL
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -33,7 +33,6 @@ android {
         }
     }
 
-    // Added to fix lint errors temporarily
     lint {
         baseline = file("lint-baseline.xml")
     }
