@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dietary_restrictions_screen.dart';
-import '../services/ingredients_list.dart';
 
 class IngredientsListPage extends StatefulWidget {
-  IngredientsListPage({super.key});
+  const IngredientsListPage({super.key});
+
   @override
   _IngredientsListPageState createState() => _IngredientsListPageState();
 }
 
 class _IngredientsListPageState extends State<IngredientsListPage> {
-  final IngredientsList ingredientsList = IngredientsList();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   bool _loading = true;
+
+  // For UI toggles
+  List<String> _chosenIngredients = [];
+  final List<String> _hardCodedIngredientList = [
+    'Tomato', 'Onion', 'Garlic', 'Potato', 'Carrot'
+  ];
 
   @override
   void initState() {
@@ -28,20 +33,16 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
     if (user == null) return;
 
     try {
-      final doc = await _firestore.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        final data = doc.data()!;
-        setState(() {
-          ingredientsList.chosenIngredients =
-              List<String>.from(data['chosenIngredients'] ?? []);
-          ingredientsList.chosenDietRestrictions =
-              List<String>.from(data['chosenDietRestrictions'] ?? []);
-          ingredientsList.availableCookingTime =
-              data['availableCookingTime'] ?? "";
-          ingredientsList.chosenCookingTools =
-              List<String>.from(data['chosenCookingTools'] ?? []);
-        });
-      }
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('ingredients')
+          .get();
+
+      setState(() {
+        _chosenIngredients =
+            snapshot.docs.map((doc) => doc['name'] as String).toList();
+      });
     } catch (e) {
       print("Error fetching ingredients: $e");
     } finally {
@@ -49,16 +50,42 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
     }
   }
 
-  Future<void> _saveIngredients() async {
+  Future<void> _addIngredient(String name) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
     try {
-      await _firestore.collection('users').doc(user.uid).set({
-        'chosenIngredients': ingredientsList.chosenIngredients,
-      }, SetOptions(merge: true));
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('ingredients')
+          .add({'name': name, 'addedAt': FieldValue.serverTimestamp()});
+
+      setState(() => _chosenIngredients.add(name));
     } catch (e) {
-      print("Error saving ingredients: $e");
+      print("Error adding ingredient: $e");
+    }
+  }
+
+  Future<void> _removeIngredient(String name) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('ingredients')
+          .where('name', isEqualTo: name)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      setState(() => _chosenIngredients.remove(name));
+    } catch (e) {
+      print("Error removing ingredient: $e");
     }
   }
 
@@ -77,10 +104,10 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(22),
-        itemCount: ingredientsList.hardCodedIngredientList.length,
+        itemCount: _hardCodedIngredientList.length,
         itemBuilder: (context, index) {
-          final ingredient = ingredientsList.hardCodedIngredientList[index];
-          final isAdded = ingredientsList.chosenIngredients.contains(ingredient);
+          final ingredient = _hardCodedIngredientList[index];
+          final isAdded = _chosenIngredients.contains(ingredient);
 
           return Container(
             height: 50,
@@ -94,14 +121,11 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    setState(() {
-                      if (isAdded) {
-                        ingredientsList.chosenIngredients.remove(ingredient);
-                      } else {
-                        ingredientsList.chosenIngredients.add(ingredient);
-                      }
-                    });
-                    _saveIngredients(); // save immediately
+                    if (isAdded) {
+                      _removeIngredient(ingredient);
+                    } else {
+                      _addIngredient(ingredient);
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isAdded ? Colors.grey : Colors.deepPurple,
@@ -121,7 +145,6 @@ class _IngredientsListPageState extends State<IngredientsListPage> {
         padding: const EdgeInsets.all(16.0),
         child: ElevatedButton(
           onPressed: () {
-            _saveIngredients(); // save before moving forward
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const DietaryRestrictionsScreen(),

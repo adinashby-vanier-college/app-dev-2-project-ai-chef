@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:recipe_ai_app/screens/cooking_tools_screen.dart'; // You can remove this if not needed anymore
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ingredients_list.dart';
 import '../services/gemini_service.dart';
 
@@ -13,47 +14,91 @@ class TimeSelectionScreen extends StatefulWidget {
 
 class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
   final IngredientsList ingredientsList = IngredientsList();
-  final GeminiService geminiService = GeminiService(); // Your Gemini API service
+  final GeminiService geminiService = GeminiService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   Duration selectedDuration = const Duration(minutes: 30);
   bool _isGeneratingRecipe = false;
   String? _generatedRecipe;
 
-  // Function to generate the recipe prompt
+  @override
+  void initState() {
+    super.initState();
+    _loadSelectedTime();
+  }
+
+  // Load previously selected cooking time from Firestore
+  Future<void> _loadSelectedTime() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists && doc.data()?['availableCookingTime'] != null) {
+        final timeStr = doc.data()!['availableCookingTime'] as String;
+        ingredientsList.availableCookingTime = timeStr;
+
+        // Convert "1h 30m" to Duration
+        final hours = RegExp(r'(\d+)h').firstMatch(timeStr)?.group(1);
+        final minutes = RegExp(r'(\d+)m').firstMatch(timeStr)?.group(1);
+
+        setState(() {
+          selectedDuration = Duration(
+            hours: hours != null ? int.parse(hours) : 0,
+            minutes: minutes != null ? int.parse(minutes) : 0,
+          );
+        });
+      }
+    } catch (e) {
+      print("Error loading cooking time: $e");
+    }
+  }
+
+  // Save selected cooking time to Firestore
+  Future<void> _saveSelectedTime() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        'availableCookingTime': ingredientsList.availableCookingTime,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print("Error saving cooking time: $e");
+    }
+  }
+
+  // Generate prompt for Gemini
   String _generateRecipePrompt() {
     String ingredients = ingredientsList.chosenIngredients.join(', ');
     String restrictions = ingredientsList.chosenDietRestrictions.join(', ');
     String time = ingredientsList.availableCookingTime;
     String tools = ingredientsList.chosenCookingTools.join(', ');
 
-    // Construct the prompt
     return '''
-      I have the following ingredients: $ingredients.
-      Dietary restrictions: $restrictions.
-      I have $time to cook.
-      I have the following tools available: $tools.
-      Suggest a recipe based on these.
-    ''';
+I have the following ingredients: $ingredients.
+Dietary restrictions: $restrictions.
+I have $time to cook.
+I have the following tools available: $tools.
+Suggest a recipe based on these.
+''';
   }
 
-  // Function to fetch the recipe from Gemini API
+  // Call Gemini API to generate recipe
   Future<void> _generateRecipe() async {
-    String prompt = _generateRecipePrompt();
-    setState(() {
-      _isGeneratingRecipe = true; // Show loading indicator
-    });
+    setState(() => _isGeneratingRecipe = true);
 
     try {
-      String recipe = await geminiService.getRecipe(prompt);
+      final prompt = _generateRecipePrompt();
+      final recipe = await geminiService.getRecipe(prompt);
+
       setState(() {
-        _isGeneratingRecipe = false; // Hide loading indicator
-        _generatedRecipe = recipe;  // Store the generated recipe
+        _generatedRecipe = recipe;
+        _isGeneratingRecipe = false;
       });
     } catch (e) {
-      print("Error generating recipe: $e");
-      setState(() {
-        _isGeneratingRecipe = false; // Hide loading indicator
-      });
-      // Show error message if something goes wrong
+      setState(() => _isGeneratingRecipe = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error generating recipe: $e")),
       );
@@ -73,7 +118,6 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Cupertino timer picker for selecting the cooking time
               CupertinoTimerPicker(
                 mode: CupertinoTimerPickerMode.hm,
                 initialTimerDuration: selectedDuration,
@@ -90,18 +134,19 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
-              // Button to generate recipe after selecting time
               ElevatedButton(
                 onPressed: _isGeneratingRecipe
-                    ? null // Disable the button while generating recipe
-                    : () {
-                        // Save selected time to ingredients list
+                    ? null
+                    : () async {
+                        // Save selected time locally
                         ingredientsList.availableCookingTime =
                             "${selectedDuration.inHours}h ${(selectedDuration.inMinutes % 60)}m";
-                        print("Selected Time: ${ingredientsList.availableCookingTime}");
 
-                        // Generate the recipe
-                        _generateRecipe();
+                        // Save to Firestore
+                        await _saveSelectedTime();
+
+                        // Generate recipe
+                        await _generateRecipe();
                       },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -118,24 +163,13 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
                       ),
               ),
               const SizedBox(height: 20),
-              // Display the generated recipe if available
               if (_generatedRecipe != null)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
+                Expanded(
                   child: SingleChildScrollView(
                     child: Text(
                       _generatedRecipe!,
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ),
-              // Show loading message if generating recipe
-              if (_isGeneratingRecipe)
-                const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(
-                    "Generating recipe, please wait...",
-                    style: TextStyle(fontSize: 16),
                   ),
                 ),
             ],

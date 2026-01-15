@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:recipe_ai_app/screens/time_selection_screen.dart'; // Import TimeSelectionScreen
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:recipe_ai_app/screens/time_selection_screen.dart';
 import '../services/ingredients_list.dart';
 
 class CookingToolsScreen extends StatefulWidget {
@@ -11,6 +13,51 @@ class CookingToolsScreen extends StatefulWidget {
 
 class _CookingToolsScreenState extends State<CookingToolsScreen> {
   final IngredientsList ingredientsList = IngredientsList();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCookingTools();
+  }
+
+  // Load previously selected tools from Firestore
+  Future<void> _loadCookingTools() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        setState(() {
+          ingredientsList.chosenCookingTools =
+              List<String>.from(data['chosenCookingTools'] ?? []);
+        });
+      }
+    } catch (e) {
+      print("Error loading cooking tools: $e");
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
+
+  // Save tools to Firestore
+  Future<void> _saveCookingTools() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestore.collection('users').doc(user.uid).set({
+        'chosenCookingTools': ingredientsList.chosenCookingTools,
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print("Error saving cooking tools: $e");
+    }
+  }
 
   // Toggle tool selection
   void _toggleTool(String tool) {
@@ -21,11 +68,26 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
         ingredientsList.chosenCookingTools.add(tool);
       }
     });
+
+    _saveCookingTools(); // save immediately
     print("Chosen tools: ${ingredientsList.chosenCookingTools}");
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final tools = {
+      "Oven Top": 'assets/images/oventop.PNG',
+      "Camp Fire": 'assets/images/fire.PNG',
+      "Microwave": 'assets/images/microwave.PNG',
+      "Oven": 'assets/images/oven.PNG',
+    };
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Select Cooking Tools"),
@@ -36,12 +98,9 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
         child: Wrap(
           spacing: 20.0,
           runSpacing: 20.0,
-          children: <Widget>[
-            _buildToolButton("Oven Top", 'assets/images/oventop.PNG'),
-            _buildToolButton("Camp Fire", 'assets/images/fire.PNG'),
-            _buildToolButton("Microwave", 'assets/images/microwave.PNG'),
-            _buildToolButton("Oven", 'assets/images/oven.PNG'),
-          ],
+          children: tools.entries
+              .map((e) => _buildToolButton(e.key, e.value))
+              .toList(),
         ),
       ),
       bottomNavigationBar: SafeArea(
@@ -56,10 +115,10 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
               ),
             ),
             onPressed: () {
-              // Navigate to TimeSelectionScreen after choosing tools
+              _saveCookingTools(); // make sure latest selection is saved
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => const TimeSelectionScreen(), // Changed this to TimeSelectionScreen which is final screen where API call occurs
+                  builder: (context) => const TimeSelectionScreen(),
                 ),
               );
             },
@@ -90,7 +149,7 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: Image.asset(
-            imagePath, // Correct path
+            imagePath,
             height: 130,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {

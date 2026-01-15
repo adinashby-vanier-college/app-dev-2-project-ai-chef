@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:recipe_ai_app/screens/cooking_tools_screen.dart'; // Import the CookingToolsScreen
-import '../services/ingredients_list.dart';
+import 'package:recipe_ai_app/screens/cooking_tools_screen.dart';
 
 class DietaryRestrictionsScreen extends StatefulWidget {
   const DietaryRestrictionsScreen({super.key});
@@ -13,91 +12,103 @@ class DietaryRestrictionsScreen extends StatefulWidget {
 }
 
 class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
-  final IngredientsList ingredientsList = IngredientsList();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  List<String> _chosenRestrictions = [];
+  final List<String> _availableRestrictions = ['dairy', 'peanut', 'vegan', 'vegetarian'];
   bool _isNextButtonLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserDietaryRestrictions();
+    _loadRestrictions();
   }
 
-  // Load user's dietary restrictions from Firestore
-  Future<void> _loadUserDietaryRestrictions() async {
+  // Load restrictions from Firestore
+  Future<void> _loadRestrictions() async {
     final user = _auth.currentUser;
-    if (user == null) return; // If no user is logged in, do nothing
+    if (user == null) return;
 
     try {
-      final doc = await _firestore.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        final data = doc.data();
-        setState(() {
-          // Retrieve and set the user's chosen restrictions
-          ingredientsList.chosenDietRestrictions = List<String>.from(
-            data?['chosenDietRestrictions'] ?? [],
-          );
-        });
-      }
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('dietaryRestrictions')
+          .get();
+
+      setState(() {
+        _chosenRestrictions = snapshot.docs.map((doc) => doc['name'] as String).toList();
+      });
     } catch (e) {
       print("Error loading dietary restrictions: $e");
     }
   }
 
-  // Save dietary restrictions to Firestore
-  Future<void> _saveDietaryRestrictions() async {
+  // Add restriction
+  Future<void> _addRestriction(String restriction) async {
     final user = _auth.currentUser;
-    if (user == null) return; // If no user is logged in, do nothing
+    if (user == null) return;
 
     try {
-      await _firestore.collection('users').doc(user.uid).set(
-        {
-          'chosenDietRestrictions': ingredientsList.chosenDietRestrictions,
-        },
-        SetOptions(merge: true), // Merge to keep existing data intact
-      );
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('dietaryRestrictions')
+          .add({'name': restriction, 'addedAt': FieldValue.serverTimestamp()});
+
+      setState(() => _chosenRestrictions.add(restriction));
     } catch (e) {
-      print("Error saving dietary restrictions: $e");
+      print("Error adding restriction: $e");
     }
   }
 
-  // Toggle dietary restriction selection
-  void _toggleRestriction(String restriction) {
-    setState(() {
-      if (ingredientsList.chosenDietRestrictions.contains(restriction)) {
-        ingredientsList.chosenDietRestrictions.remove(restriction);
-      } else {
-        ingredientsList.chosenDietRestrictions.add(restriction);
+  // Remove restriction
+  Future<void> _removeRestriction(String restriction) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('dietaryRestrictions')
+          .where('name', isEqualTo: restriction)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
       }
-    });
 
-    // Save to Firestore immediately after toggling
-    _saveDietaryRestrictions();
-
-    print("Chosen restrictions: ${ingredientsList.chosenDietRestrictions}");
+      setState(() => _chosenRestrictions.remove(restriction));
+    } catch (e) {
+      print("Error removing restriction: $e");
+    }
   }
 
-  // Navigate to CookingToolsScreen
+  void _toggleRestriction(String restriction) {
+    if (_chosenRestrictions.contains(restriction)) {
+      _removeRestriction(restriction);
+    } else {
+      _addRestriction(restriction);
+    }
+  }
+
   void _navigateToCookingToolsScreen() async {
-    setState(() {
-      _isNextButtonLoading = true;
-    });
+    setState(() => _isNextButtonLoading = true);
 
-    // Simulate saving the data or additional processing
-    await Future.delayed(const Duration(seconds: 1));
+    // Small delay to ensure Firestore writes complete
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    // Navigate to the next screen (CookingToolsScreen)
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const CookingToolsScreen(), // Navigate to CookingToolsScreen
-      ),
+      MaterialPageRoute(builder: (_) => const CookingToolsScreen()),
     );
+
+    setState(() => _isNextButtonLoading = false);
   }
 
-  // Build a restriction button widget
   Widget _buildRestrictionButton(String restriction, String imagePath) {
-    final isSelected = ingredientsList.chosenDietRestrictions.contains(restriction);
+    final isSelected = _chosenRestrictions.contains(restriction);
 
     return GestureDetector(
       onTap: () => _toggleRestriction(restriction),
@@ -110,11 +121,12 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
-            BoxShadow(
-              color: isSelected ? Colors.deepPurple.withOpacity(0.5) : Colors.transparent,
-              spreadRadius: 2,
-              blurRadius: 5,
-            ),
+            if (isSelected)
+              BoxShadow(
+                color: Colors.deepPurple.withOpacity(0.5),
+                spreadRadius: 2,
+                blurRadius: 5,
+              ),
           ],
         ),
         child: Column(
@@ -123,7 +135,7 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
-                imagePath, // Image for the restriction
+                imagePath,
                 height: 130,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
@@ -148,7 +160,6 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
     );
   }
 
-  // Helper method to get restriction labels
   String _getRestrictionLabel(String restriction) {
     switch (restriction) {
       case 'dairy':
@@ -173,36 +184,31 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // Two columns
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
-            ),
-            itemCount: 4,
-            itemBuilder: (context, index) {
-              final restrictions = ['dairy', 'peanut', 'vegan', 'vegetarian'];
-              final restriction = restrictions[index];
-              final imagePaths = {
-                'dairy': 'assets/images/dairy.PNG',
-                'peanut': 'assets/images/peanut.PNG',
-                'vegan': 'assets/images/vegan.PNG',
-                'vegetarian': 'assets/images/vegetarian.PNG'
-              };
-
-              return _buildRestrictionButton(restriction, imagePaths[restriction]!);
-            },
+        child: GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16.0,
+            mainAxisSpacing: 16.0,
           ),
+          itemCount: _availableRestrictions.length,
+          itemBuilder: (context, index) {
+            final restriction = _availableRestrictions[index];
+            final imagePaths = {
+              'dairy': 'assets/images/dairy.PNG',
+              'peanut': 'assets/images/peanut.PNG',
+              'vegan': 'assets/images/vegan.PNG',
+              'vegetarian': 'assets/images/vegetarian.PNG'
+            };
+
+            return _buildRestrictionButton(restriction, imagePaths[restriction]!);
+          },
         ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: ElevatedButton(
-            onPressed: _isNextButtonLoading ? null : _navigateToCookingToolsScreen, // Adjusted here
+            onPressed: _isNextButtonLoading ? null : _navigateToCookingToolsScreen,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: Colors.deepPurple,
@@ -211,9 +217,7 @@ class _DietaryRestrictionsScreenState extends State<DietaryRestrictionsScreen> {
               ),
             ),
             child: _isNextButtonLoading
-                ? const CircularProgressIndicator(
-                    color: Colors.white,
-                  )
+                ? const CircularProgressIndicator(color: Colors.white)
                 : const Text(
                     "Next",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),

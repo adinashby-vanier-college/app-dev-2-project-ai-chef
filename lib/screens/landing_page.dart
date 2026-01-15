@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import '../services/ingredients_list.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'ingredients_list_page.dart';
-import '../firebase_options.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -14,7 +13,6 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
-  bool _loading = true;
   bool _signingIn = false;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -22,22 +20,24 @@ class _LandingPageState extends State<LandingPage> {
   @override
   void initState() {
     super.initState();
-    _initializeFirebase();
+    // Firebase is already initialized in main.dart
   }
 
-  Future<void> _initializeFirebase() async {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } catch (e) {
-      debugPrint("Firebase initialization failed: $e");
-    } finally {
-      setState(() => _loading = false);
-    }
+  /// 🔥 Store user in Firestore (CREATE)
+  Future<void> _createUserInFirestore(User user) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .set({
+      'email': user.email,
+      'provider': user.providerData.first.providerId,
+      'createdAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    debugPrint('✅ User stored in Firestore');
   }
 
-  /// Google Sign-In (forces account chooser)
+  /// Google Sign-In
   Future<void> _signInWithGoogle() async {
     setState(() => _signingIn = true);
 
@@ -46,12 +46,10 @@ class _LandingPageState extends State<LandingPage> {
         signInOption: SignInOption.standard,
       );
 
-      // Force account chooser every time
-      await googleSignIn.signOut();
+      await googleSignIn.signOut(); // force chooser
 
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        // user canceled
         setState(() => _signingIn = false);
         return;
       }
@@ -63,22 +61,13 @@ class _LandingPageState extends State<LandingPage> {
         idToken: googleAuth.idToken,
       );
 
-      UserCredential userCredential =
+      final userCredential =
           await _auth.signInWithCredential(credential);
 
       final user = userCredential.user;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Check your email to verify your account before continuing!'),
-            duration: Duration(seconds: 5),
-          ),
-        );
-        setState(() => _signingIn = false);
-        return;
-      }
+      if (user == null) return;
+
+      await _createUserInFirestore(user);
 
       _goToIngredientsPage();
     } catch (e) {
@@ -128,45 +117,38 @@ class _LandingPageState extends State<LandingPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                Navigator.of(context).pop();
-                setState(() => _signingIn = true);
+              if (!formKey.currentState!.validate()) return;
+
+              Navigator.of(context).pop();
+              setState(() => _signingIn = true);
+
+              try {
+                UserCredential userCredential;
                 try {
-                  UserCredential userCredential;
-                  try {
-                    userCredential = await _auth.signInWithEmailAndPassword(
-                        email: email, password: password);
-                  } on FirebaseAuthException catch (e) {
-                    if (e.code == 'user-not-found') {
-                      userCredential =
-                          await _auth.createUserWithEmailAndPassword(
-                              email: email, password: password);
-                    } else {
-                      throw e;
-                    }
+                  userCredential =
+                      await _auth.signInWithEmailAndPassword(
+                          email: email, password: password);
+                } on FirebaseAuthException catch (e) {
+                  if (e.code == 'user-not-found') {
+                    userCredential =
+                        await _auth.createUserWithEmailAndPassword(
+                            email: email, password: password);
+                  } else {
+                    rethrow;
                   }
-
-                  final user = userCredential.user;
-                  if (user != null && !user.emailVerified) {
-                    await user.sendEmailVerification();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Check your email to verify your account before continuing!'),
-                        duration: Duration(seconds: 5),
-                      ),
-                    );
-                    setState(() => _signingIn = false);
-                    return;
-                  }
-
-                  _goToIngredientsPage();
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Sign-In failed: $e")));
-                } finally {
-                  setState(() => _signingIn = false);
                 }
+
+                final user = userCredential.user;
+                if (user == null) return;
+
+                await _createUserInFirestore(user);
+
+                _goToIngredientsPage();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Sign-In failed: $e")));
+              } finally {
+                setState(() => _signingIn = false);
               }
             },
             child: const Text("Submit"),
@@ -176,28 +158,15 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
-  /// Navigate to Ingredients page
   void _goToIngredientsPage() {
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => IngredientsListPage()),
-      );
-    }
-  }
-
-  /// Continue button for debugging
-  void _continueDebug() {
-    _goToIngredientsPage();
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const IngredientsListPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -220,106 +189,32 @@ class _LandingPageState extends State<LandingPage> {
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
                 ),
-                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               const Text(
                 "Generate recipes from what you have in your kitchen",
+                style: TextStyle(color: Colors.white70, fontSize: 18),
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 18,
-                ),
               ),
               const SizedBox(height: 40),
 
-              // Google Sign-In
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: OutlinedButton(
                   onPressed: _signingIn ? null : _signInWithGoogle,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
                   child: _signingIn
                       ? const CircularProgressIndicator()
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets/google_logo.png',
-                              height: 24,
-                              width: 24,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              "Sign in with Google",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                      : const Text("Sign in with Google"),
                 ),
               ),
 
-              // Email Sign-In
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
                 child: ElevatedButton(
                   onPressed: _signingIn ? null : _signInWithEmail,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple.shade700,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    minimumSize: const Size.fromHeight(50),
-                  ),
                   child: _signingIn
                       ? const CircularProgressIndicator()
-                      : const Text(
-                          "Sign in with Email",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Continue button for debugging
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-                child: OutlinedButton(
-                  onPressed: _continueDebug,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white54,
-                    foregroundColor: Colors.black87,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text(
-                    "Continue (Debug)",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                      : const Text("Sign in with Email"),
                 ),
               ),
 
