@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "487913960052",
+    "project_id": "ai-chef-recipe-generator",
+    "storage_bucket": "ai-chef-recipe-generator.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:487913960052:android:e08c8ec8343c30ba125721",
+        "android_client_info": {
+          "package_name": "com.android.application"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "487913960052-inm9436uug8kfr2ri1oe90nu5stu6ehe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMZi2awgrlyNyRb3aHpwkBbP_5V3Ls-Wc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "487913960052-inm9436uug8kfr2ri1oe90nu5stu6ehe.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "487913960052-do081ooj1bvf9husd3gvmffajddk4ep1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.recipeAiApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

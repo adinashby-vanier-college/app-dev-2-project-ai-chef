@@ -23,7 +23,7 @@ class _LandingPageState extends State<LandingPage> {
             child: Image.asset(
               "images/recipe_step_1.png",
               fit: BoxFit.cover,
-            ),
+            ),  
           ),
           Center(
             child: Column(

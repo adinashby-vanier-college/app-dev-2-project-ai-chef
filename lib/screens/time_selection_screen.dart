@@ -1,16 +1,77 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:recipe_ai_app/screens/cooking_tools_screen.dart';
 import '../services/ingredients_list.dart';
 
 class TimeSelectionScreen extends StatefulWidget {
+  const TimeSelectionScreen({super.key});
+
   @override
   _TimeSelectionScreenState createState() => _TimeSelectionScreenState();
 }
 
 class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
   final IngredientsList ingredientsList = IngredientsList();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // This duration controls the picker's visual position
   Duration _currentDuration = const Duration(minutes: 30);
+
+  @override
+  void initState() {
+    super.initState();
+    // Load existing data from Firestore when the screen opens
+    _loadSelectedTime();
+  }
+
+  // Load previously selected cooking time from Firestore
+  Future<void> _loadSelectedTime() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists && doc.data()?['availableCookingTime'] != null) {
+        final timeStr = doc.data()!['availableCookingTime'] as String;
+
+        // Update the singleton service
+        ingredientsList.availableCookingTime = timeStr;
+
+        // Parse "1h 30m" back into a Duration for the UI picker
+        final hoursMatch = RegExp(r'(\d+)h').firstMatch(timeStr);
+        final minutesMatch = RegExp(r'(\d+)m').firstMatch(timeStr);
+
+        final h = int.tryParse(hoursMatch?.group(1) ?? '0') ?? 0;
+        final m = int.tryParse(minutesMatch?.group(1) ?? '0') ?? 0;
+
+        setState(() {
+          _currentDuration = Duration(hours: h, minutes: m);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading cooking time: $e");
+    }
+  }
+
+  // Save selected cooking time to Firestore
+  Future<void> _saveSelectedTime() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Use the value already stored in ingredientsList
+      await _firestore.collection('users').doc(user.uid).set({
+        'availableCookingTime': ingredientsList.availableCookingTime,
+      }, SetOptions(merge: true));
+
+      debugPrint("Successfully saved: ${ingredientsList.availableCookingTime}");
+    } catch (e) {
+      debugPrint("Error saving cooking time: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +83,7 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Cooking Time"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Cooking Time"), centerTitle: true),
       body: Column(
         children: [
           const SizedBox(height: 40),
@@ -34,9 +92,6 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
           const Text(
             "How much time do you have?",
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 8),
           ),
           const Spacer(),
           Container(
@@ -76,15 +131,20 @@ class _TimeSelectionScreenState extends State<TimeSelectionScreen> {
               Expanded(
                 child: OutlinedButton(
                   style: actionButtonStyle,
-                  onPressed: () {
+                  onPressed: () async {
+                    // 1. Update the local service string first
                     ingredientsList.availableCookingTime =
                     "${_currentDuration.inHours}h ${_currentDuration.inMinutes % 60}m";
 
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => CookingToolsScreen(),
-                      ),
-                    );
+                    // 2. Wait for the save to complete
+                    await _saveSelectedTime();
+
+                    // 3. Navigate
+                    if (mounted) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => CookingToolsScreen()),
+                      );
+                    }
                   },
                   child: const Text("Next"),
                 ),

@@ -15,10 +15,15 @@ dependencies:
   flutter_bloc: ^9.0.0
   equatable: ^2.0.7
   cupertino_icons: ^1.0.8
-  firebase_core: ^4.3.0
-  firebase_ai: ^3.6.1
+#  firebase_core: ^4.3.0
+#  firebase_ai: ^3.6.1
   google_generative_ai: ^0.4.7
   image_picker: ^1.2.1
+
+  firebase_core: ^2.30.0
+  firebase_auth: ^4.17.0
+  cloud_firestore: ^4.17.5
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -32,3 +37,6 @@ flutter:
   assets:
     - assets/config.env
     - images/
+
+dependency_overrides:
+  google_sign_in_android: ^6.1.23
